@@ -1,0 +1,42 @@
+/* App-specific overrides */
+#root {
+  min-height: 100vh;
+}
+
+/* Add smooth page transitions */
+.main-content {
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Recharts tooltip customization */
+.recharts-tooltip-wrapper {
+  outline: none;
+}
+
+.recharts-default-tooltip {
+  background: #2C3E50 !important;
+  border: none !important;
+  border-radius: 8px !important;
+  padding: 12px 16px !important;
+}
+
+.recharts-tooltip-label {
+  color: #FFFFFF !important;
+  font-weight: 600 !important;
+}
+
+.recharts-tooltip-item {
+  color: #1ABC9C !important;
+}
