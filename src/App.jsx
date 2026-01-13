@@ -4,8 +4,10 @@ import Header from './components/Header';
 import Dashboard from './pages/Dashboard';
 import Users from './pages/Users';
 import Content from './pages/Content';
-import Subscriptions from './pages/Subscriptions';
+import Pricing from './pages/Pricing';
+import Orders from './pages/Orders';
 import Notifications from './pages/Notifications';
+import Settings from './pages/Settings';
 import './App.css';
 
 function App() {
@@ -23,10 +25,14 @@ function App() {
         return <Users />;
       case 'content':
         return <Content />;
-      case 'subscriptions':
-        return <Subscriptions />;
+      case 'pricing':
+        return <Pricing />;
+      case 'orders':
+        return <Orders />;
       case 'notifications':
         return <Notifications />;
+      case 'settings':
+        return <Settings />;
       default:
         return <Dashboard />;
     }

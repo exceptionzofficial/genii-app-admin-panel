@@ -1,273 +1,564 @@
 import {
     Users,
     FileText,
-    CreditCard,
+    Video,
+    IndianRupee,
     TrendingUp,
     ArrowUpRight,
     ArrowDownRight,
-    Eye,
-    Download,
-    Video,
-    Crown
+    ShoppingCart,
+    Crown,
+    Truck,
+    Package,
+    Clock,
+    CheckCircle,
+    Eye
 } from 'lucide-react';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, PieChart, Pie, Cell } from 'recharts';
 
-const revenueData = [
-    { name: 'Jan', value: 45000 },
-    { name: 'Feb', value: 52000 },
-    { name: 'Mar', value: 48000 },
-    { name: 'Apr', value: 61000 },
-    { name: 'May', value: 55000 },
-    { name: 'Jun', value: 67000 },
+// Stats data
+const statsData = [
+    {
+        id: 1,
+        label: 'Total Students',
+        value: '1,247',
+        change: '+12%',
+        trend: 'up',
+        icon: Users,
+        color: '#3498db'
+    },
+    {
+        id: 2,
+        label: 'Total Revenue',
+        value: '₹4,52,890',
+        change: '+18%',
+        trend: 'up',
+        icon: IndianRupee,
+        color: '#27ae60'
+    },
+    {
+        id: 3,
+        label: 'PDF Sales',
+        value: '423',
+        change: '+8%',
+        trend: 'up',
+        icon: FileText,
+        color: '#e74c3c'
+    },
+    {
+        id: 4,
+        label: 'Video Sales',
+        value: '312',
+        change: '+15%',
+        trend: 'up',
+        icon: Video,
+        color: '#9b59b6'
+    }
 ];
 
-const subscriptionDistribution = [
-    { name: 'All PDFs', value: 320, color: '#E74C3C' },
-    { name: 'All Videos', value: 280, color: '#3498DB' },
-    { name: 'Complete Access', value: 450, color: '#F39C12' },
+// Class-wise distribution
+const classDistribution = [
+    { name: 'Class 10', students: 342, revenue: 102600, color: '#3498db' },
+    { name: 'Class 11', students: 287, revenue: 114800, color: '#9b59b6' },
+    { name: 'Class 12', students: 398, revenue: 179100, color: '#e67e22' },
+    { name: 'NEET', students: 220, revenue: 121000, color: '#1abc9c' },
 ];
 
-const boardDistribution = [
-    { name: 'State Board', students: 680, color: '#1ABC9C' },
-    { name: 'CBSE', students: 540, color: '#9B59B6' },
+// Recent orders
+const recentOrders = [
+    { id: 'ORD001', user: 'Rahul Kumar', class: 'Class 12', package: 'Complete Bundle', amount: 4500, status: 'completed', date: '2 hours ago' },
+    { id: 'ORD002', user: 'Priya Sharma', class: 'Class 11', package: 'All PDFs', amount: 1800, status: 'completed', date: '3 hours ago' },
+    { id: 'HC001', user: 'Amit Singh', class: 'NEET', package: 'Hard Copy', amount: 4100, status: 'processing', date: '5 hours ago' },
+    { id: 'ORD003', user: 'Sneha Patel', class: 'Class 10', package: 'All Videos', amount: 2000, status: 'completed', date: '6 hours ago' },
+    { id: 'HC002', user: 'Vikram Reddy', class: 'Class 12', package: 'Hard Copy', amount: 3600, status: 'shipped', date: '1 day ago' },
 ];
 
-const recentUsers = [
-    { id: 1, name: 'Rahul Kumar', email: 'rahul@example.com', whatsapp: '+91 9876543210', class: 'Class 12', board: 'State Board', status: 'Active', date: '2 hours ago' },
-    { id: 2, name: 'Priya Sharma', email: 'priya@example.com', whatsapp: '+91 9876543211', class: 'NEET', board: 'CBSE', status: 'Active', date: '5 hours ago' },
-    { id: 3, name: 'Amit Singh', email: 'amit@example.com', whatsapp: '+91 9876543212', class: 'Class 11', board: 'State Board', status: 'Pending', date: '1 day ago' },
-    { id: 4, name: 'Sneha Patel', email: 'sneha@example.com', whatsapp: '+91 9876543213', class: 'Class 10', board: 'CBSE', status: 'Active', date: '2 days ago' },
-];
-
+// Popular content
 const popularContent = [
-    { id: 1, title: 'Physics - Laws of Motion Notes', type: 'PDF', board: 'State', rating: 4.8, views: 1245 },
-    { id: 2, title: 'Chemistry - Organic Reactions', type: 'Video', board: 'CBSE', rating: 4.7, views: 982 },
-    { id: 3, title: 'Mathematics - Trigonometry Formulas', type: 'PDF', board: 'State', rating: 4.9, views: 876 },
-    { id: 4, title: 'Biology - Human Physiology', type: 'Video', board: 'CBSE', rating: 4.8, views: 754 },
+    { id: 1, title: 'Mathematics - Complete Guide', type: 'PDF', class: 'Class 10', views: 2345, purchases: 234 },
+    { id: 2, title: 'NEET Physics Complete', type: 'Video', class: 'NEET', views: 1876, purchases: 189 },
+    { id: 3, title: 'Chemistry - Organic Reactions', type: 'PDF', class: 'Class 12', views: 1654, purchases: 167 },
+    { id: 4, title: 'Biology - Cell Structure', type: 'Video', class: 'Class 11', views: 1432, purchases: 145 },
 ];
 
-const Dashboard = () => {
-    const stats = [
-        {
-            label: 'Total Students',
-            value: '1,220',
-            change: '+12%',
-            positive: true,
-            icon: Users,
-            color: 'primary'
-        },
-        {
-            label: 'PDF Subscriptions',
-            value: '320',
-            change: '+8%',
-            positive: true,
-            icon: FileText,
-            color: 'error'
-        },
-        {
-            label: 'Video Subscriptions',
-            value: '280',
-            change: '+15%',
-            positive: true,
-            icon: Video,
-            color: 'info'
-        },
-        {
-            label: 'Complete Access',
-            value: '450',
-            change: '+22%',
-            positive: true,
-            icon: Crown,
-            color: 'warning'
-        },
-    ];
+function Dashboard() {
+    const getStatusIcon = (status) => {
+        switch (status) {
+            case 'completed': return <CheckCircle size={14} />;
+            case 'processing': return <Clock size={14} />;
+            case 'shipped': return <Truck size={14} />;
+            default: return <Package size={14} />;
+        }
+    };
+
+    const getStatusClass = (status) => {
+        switch (status) {
+            case 'completed': return 'status-success';
+            case 'processing': return 'status-warning';
+            case 'shipped': return 'status-info';
+            default: return '';
+        }
+    };
+
+    const getPackageIcon = (pkg) => {
+        if (pkg === 'Complete Bundle') return <Crown size={14} className="icon-bundle" />;
+        if (pkg === 'All Videos') return <Video size={14} className="icon-video" />;
+        if (pkg === 'Hard Copy') return <Truck size={14} className="icon-hardcopy" />;
+        return <FileText size={14} className="icon-pdf" />;
+    };
+
+    const totalRevenue = classDistribution.reduce((sum, c) => sum + c.revenue, 0);
 
     return (
-        <div>
+        <div className="page-container dashboard-page">
             {/* Stats Grid */}
-            <div className="stat-grid">
-                {stats.map((stat, index) => (
-                    <div key={index} className="stat-card">
-                        <div className={`stat-icon ${stat.color}`}>
+            <div className="stats-grid">
+                {statsData.map(stat => (
+                    <div key={stat.id} className="stat-card">
+                        <div className="stat-icon" style={{ backgroundColor: `${stat.color}15`, color: stat.color }}>
                             <stat.icon size={24} />
                         </div>
-                        <div className="stat-info">
-                            <h3>{stat.value}</h3>
-                            <p>{stat.label}</p>
-                            <div className={`stat-change ${stat.positive ? 'positive' : 'negative'}`}>
-                                {stat.positive ? <ArrowUpRight size={14} /> : <ArrowDownRight size={14} />}
-                                {stat.change} from last month
-                            </div>
+                        <div className="stat-content">
+                            <span className="stat-label">{stat.label}</span>
+                            <span className="stat-value">{stat.value}</span>
+                            <span className={`stat-change ${stat.trend}`}>
+                                {stat.trend === 'up' ? <ArrowUpRight size={14} /> : <ArrowDownRight size={14} />}
+                                {stat.change} this month
+                            </span>
                         </div>
                     </div>
                 ))}
             </div>
 
-            {/* Charts Row */}
-            <div className="grid-2" style={{ marginBottom: 24 }}>
-                {/* Revenue Chart */}
-                <div className="card">
+            <div className="dashboard-grid">
+                {/* Class Distribution */}
+                <div className="dashboard-card">
                     <div className="card-header">
-                        <h3 className="card-title">Revenue Overview</h3>
-                        <select className="form-select" style={{ width: 'auto' }}>
-                            <option>Last 6 Months</option>
-                            <option>Last Year</option>
-                        </select>
+                        <h3>Class Distribution</h3>
+                        <span className="card-subtitle">Students & Revenue by Class</span>
                     </div>
-                    <ResponsiveContainer width="100%" height={250}>
-                        <LineChart data={revenueData}>
-                            <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                            <XAxis dataKey="name" stroke="#7F8C8D" fontSize={12} />
-                            <YAxis stroke="#7F8C8D" fontSize={12} />
-                            <Tooltip formatter={(value) => `₹${value.toLocaleString()}`} />
-                            <Line
-                                type="monotone"
-                                dataKey="value"
-                                stroke="#1ABC9C"
-                                strokeWidth={2}
-                                dot={{ fill: '#1ABC9C', strokeWidth: 2 }}
-                            />
-                        </LineChart>
-                    </ResponsiveContainer>
+                    <div className="class-distribution">
+                        {classDistribution.map(cls => (
+                            <div key={cls.name} className="class-row">
+                                <div className="class-info">
+                                    <div className="class-color" style={{ backgroundColor: cls.color }}></div>
+                                    <span className="class-name">{cls.name}</span>
+                                </div>
+                                <div className="class-stats">
+                                    <span className="class-students">{cls.students} students</span>
+                                    <span className="class-revenue">₹{cls.revenue.toLocaleString()}</span>
+                                </div>
+                                <div className="class-bar-container">
+                                    <div
+                                        className="class-bar"
+                                        style={{
+                                            width: `${(cls.revenue / totalRevenue) * 100}%`,
+                                            backgroundColor: cls.color
+                                        }}
+                                    ></div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
                 </div>
 
-                {/* Board Distribution */}
-                <div className="card">
+                {/* Recent Orders */}
+                <div className="dashboard-card">
                     <div className="card-header">
-                        <h3 className="card-title">Students by Board</h3>
+                        <h3>Recent Orders</h3>
+                        <button className="view-all-btn">View All</button>
                     </div>
-                    <ResponsiveContainer width="100%" height={250}>
-                        <BarChart data={boardDistribution}>
-                            <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                            <XAxis dataKey="name" stroke="#7F8C8D" fontSize={12} />
-                            <YAxis stroke="#7F8C8D" fontSize={12} />
-                            <Tooltip />
-                            <Bar dataKey="students" fill="#1ABC9C" radius={[4, 4, 0, 0]} />
-                        </BarChart>
-                    </ResponsiveContainer>
+                    <div className="orders-list">
+                        {recentOrders.map(order => (
+                            <div key={order.id} className="order-row">
+                                <div className="order-info">
+                                    <div className="order-package">
+                                        {getPackageIcon(order.package)}
+                                        <span>{order.package}</span>
+                                    </div>
+                                    <span className="order-user">{order.user} • {order.class}</span>
+                                </div>
+                                <div className="order-details">
+                                    <span className="order-amount">₹{order.amount.toLocaleString()}</span>
+                                    <span className={`order-status ${getStatusClass(order.status)}`}>
+                                        {getStatusIcon(order.status)}
+                                        {order.status}
+                                    </span>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
                 </div>
-            </div>
 
-            {/* Subscription Distribution */}
-            <div className="card" style={{ marginBottom: 24 }}>
-                <div className="card-header">
-                    <h3 className="card-title">Subscription Distribution</h3>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 40, padding: 20 }}>
-                    <ResponsiveContainer width={200} height={200}>
-                        <PieChart>
-                            <Pie
-                                data={subscriptionDistribution}
-                                cx="50%"
-                                cy="50%"
-                                innerRadius={50}
-                                outerRadius={80}
-                                dataKey="value"
-                            >
-                                {subscriptionDistribution.map((entry, index) => (
-                                    <Cell key={`cell-${index}`} fill={entry.color} />
-                                ))}
-                            </Pie>
-                            <Tooltip />
-                        </PieChart>
-                    </ResponsiveContainer>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                        {subscriptionDistribution.map((item) => (
-                            <div key={item.name} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                <div style={{ width: 12, height: 12, borderRadius: 2, background: item.color }} />
-                                <span style={{ fontSize: 14 }}>{item.name}</span>
-                                <span style={{ fontSize: 14, fontWeight: 600, marginLeft: 4 }}>{item.value}</span>
+                {/* Popular Content */}
+                <div className="dashboard-card full-width">
+                    <div className="card-header">
+                        <h3>Popular Content</h3>
+                        <span className="card-subtitle">Most viewed & purchased materials</span>
+                    </div>
+                    <div className="content-table">
+                        <div className="table-header">
+                            <span>Content</span>
+                            <span>Type</span>
+                            <span>Class</span>
+                            <span>Views</span>
+                            <span>Purchases</span>
+                        </div>
+                        {popularContent.map(content => (
+                            <div key={content.id} className="table-row">
+                                <span className="content-title">{content.title}</span>
+                                <span className={`content-type ${content.type.toLowerCase()}`}>
+                                    {content.type === 'PDF' ? <FileText size={14} /> : <Video size={14} />}
+                                    {content.type}
+                                </span>
+                                <span className="content-class">{content.class}</span>
+                                <span className="content-views">
+                                    <Eye size={14} />
+                                    {content.views.toLocaleString()}
+                                </span>
+                                <span className="content-purchases">
+                                    <ShoppingCart size={14} />
+                                    {content.purchases}
+                                </span>
                             </div>
                         ))}
                     </div>
                 </div>
             </div>
 
-            {/* Tables Row */}
-            <div className="grid-2">
-                {/* Recent Users */}
-                <div className="card">
-                    <div className="card-header">
-                        <h3 className="card-title">Recent Registrations</h3>
-                        <button className="btn btn-secondary btn-sm">View All</button>
-                    </div>
-                    <div className="table-container">
-                        <table className="table">
-                            <thead>
-                                <tr>
-                                    <th>Student</th>
-                                    <th>Class</th>
-                                    <th>Board</th>
-                                    <th>Status</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {recentUsers.map((user) => (
-                                    <tr key={user.id}>
-                                        <td>
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                                                <div className="avatar">{user.name.charAt(0)}</div>
-                                                <div>
-                                                    <div style={{ fontWeight: 500 }}>{user.name}</div>
-                                                    <div style={{ fontSize: 12, color: '#7F8C8D' }}>{user.email}</div>
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td><span className="badge primary">{user.class}</span></td>
-                                        <td style={{ fontSize: 13 }}>{user.board}</td>
-                                        <td>
-                                            <span className={`badge ${user.status === 'Active' ? 'success' : 'warning'}`}>
-                                                {user.status}
-                                            </span>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
+            <style>{`
+                .dashboard-page .stats-grid {
+                    display: grid;
+                    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+                    gap: 20px;
+                    margin-bottom: 24px;
+                }
 
-                {/* Popular Content */}
-                <div className="card">
-                    <div className="card-header">
-                        <h3 className="card-title">Popular Content</h3>
-                        <button className="btn btn-secondary btn-sm">View All</button>
-                    </div>
-                    <div className="table-container">
-                        <table className="table">
-                            <thead>
-                                <tr>
-                                    <th>Content</th>
-                                    <th>Type</th>
-                                    <th>Board</th>
-                                    <th>Rating</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {popularContent.map((content) => (
-                                    <tr key={content.id}>
-                                        <td style={{ fontWeight: 500, maxWidth: 180, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{content.title}</td>
-                                        <td>
-                                            <span className={`badge ${content.type === 'PDF' ? 'error' : 'info'}`}>
-                                                {content.type}
-                                            </span>
-                                        </td>
-                                        <td style={{ fontSize: 13 }}>{content.board}</td>
-                                        <td>
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                                                <span style={{ color: '#F39C12' }}>★</span>
-                                                {content.rating}
-                                            </div>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
+                .stat-card {
+                    display: flex;
+                    align-items: flex-start;
+                    gap: 16px;
+                    background: white;
+                    padding: 20px;
+                    border-radius: 16px;
+                    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+                }
+
+                .stat-icon {
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    width: 52px;
+                    height: 52px;
+                    border-radius: 14px;
+                }
+
+                .stat-content {
+                    display: flex;
+                    flex-direction: column;
+                    gap: 4px;
+                }
+
+                .stat-label {
+                    font-size: 13px;
+                    color: #7f8c8d;
+                }
+
+                .stat-value {
+                    font-size: 24px;
+                    font-weight: 700;
+                    color: #2c3e50;
+                }
+
+                .stat-change {
+                    display: flex;
+                    align-items: center;
+                    gap: 4px;
+                    font-size: 12px;
+                    font-weight: 600;
+                }
+
+                .stat-change.up {
+                    color: #27ae60;
+                }
+
+                .stat-change.down {
+                    color: #e74c3c;
+                }
+
+                .dashboard-grid {
+                    display: grid;
+                    grid-template-columns: repeat(2, 1fr);
+                    gap: 20px;
+                }
+
+                .dashboard-card {
+                    background: white;
+                    padding: 24px;
+                    border-radius: 16px;
+                    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+                }
+
+                .dashboard-card.full-width {
+                    grid-column: 1 / -1;
+                }
+
+                .card-header {
+                    display: flex;
+                    align-items: center;
+                    justify-content: space-between;
+                    margin-bottom: 20px;
+                }
+
+                .card-header h3 {
+                    font-size: 16px;
+                    font-weight: 700;
+                    color: #2c3e50;
+                    margin: 0;
+                }
+
+                .card-subtitle {
+                    font-size: 12px;
+                    color: #95a5a6;
+                }
+
+                .view-all-btn {
+                    padding: 6px 12px;
+                    background: #ecf0f1;
+                    border: none;
+                    border-radius: 6px;
+                    font-size: 12px;
+                    font-weight: 600;
+                    color: #7f8c8d;
+                    cursor: pointer;
+                    transition: all 0.2s;
+                }
+
+                .view-all-btn:hover {
+                    background: #1abc9c;
+                    color: white;
+                }
+
+                /* Class Distribution */
+                .class-distribution {
+                    display: flex;
+                    flex-direction: column;
+                    gap: 16px;
+                }
+
+                .class-row {
+                    display: flex;
+                    flex-direction: column;
+                    gap: 8px;
+                }
+
+                .class-info {
+                    display: flex;
+                    align-items: center;
+                    gap: 10px;
+                }
+
+                .class-color {
+                    width: 12px;
+                    height: 12px;
+                    border-radius: 4px;
+                }
+
+                .class-name {
+                    font-size: 14px;
+                    font-weight: 600;
+                    color: #2c3e50;
+                }
+
+                .class-stats {
+                    display: flex;
+                    justify-content: space-between;
+                    font-size: 12px;
+                }
+
+                .class-students {
+                    color: #7f8c8d;
+                }
+
+                .class-revenue {
+                    font-weight: 600;
+                    color: #27ae60;
+                }
+
+                .class-bar-container {
+                    height: 6px;
+                    background: #ecf0f1;
+                    border-radius: 3px;
+                    overflow: hidden;
+                }
+
+                .class-bar {
+                    height: 100%;
+                    border-radius: 3px;
+                    transition: width 0.3s ease;
+                }
+
+                /* Orders List */
+                .orders-list {
+                    display: flex;
+                    flex-direction: column;
+                    gap: 12px;
+                }
+
+                .order-row {
+                    display: flex;
+                    align-items: center;
+                    justify-content: space-between;
+                    padding: 12px;
+                    background: #f8f9fa;
+                    border-radius: 10px;
+                }
+
+                .order-info {
+                    display: flex;
+                    flex-direction: column;
+                    gap: 4px;
+                }
+
+                .order-package {
+                    display: flex;
+                    align-items: center;
+                    gap: 6px;
+                    font-size: 13px;
+                    font-weight: 600;
+                    color: #2c3e50;
+                }
+
+                .icon-bundle { color: #f39c12; }
+                .icon-video { color: #9b59b6; }
+                .icon-pdf { color: #e74c3c; }
+                .icon-hardcopy { color: #3498db; }
+
+                .order-user {
+                    font-size: 12px;
+                    color: #7f8c8d;
+                }
+
+                .order-details {
+                    display: flex;
+                    flex-direction: column;
+                    align-items: flex-end;
+                    gap: 4px;
+                }
+
+                .order-amount {
+                    font-size: 14px;
+                    font-weight: 700;
+                    color: #27ae60;
+                }
+
+                .order-status {
+                    display: flex;
+                    align-items: center;
+                    gap: 4px;
+                    font-size: 11px;
+                    font-weight: 600;
+                    padding: 2px 8px;
+                    border-radius: 10px;
+                    text-transform: capitalize;
+                }
+
+                .status-success {
+                    background: rgba(39, 174, 96, 0.1);
+                    color: #27ae60;
+                }
+
+                .status-warning {
+                    background: rgba(241, 196, 15, 0.1);
+                    color: #f39c12;
+                }
+
+                .status-info {
+                    background: rgba(52, 152, 219, 0.1);
+                    color: #3498db;
+                }
+
+                /* Content Table */
+                .content-table {
+                    display: flex;
+                    flex-direction: column;
+                }
+
+                .table-header, .table-row {
+                    display: grid;
+                    grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
+                    padding: 12px 16px;
+                    gap: 12px;
+                    align-items: center;
+                }
+
+                .table-header {
+                    font-size: 11px;
+                    font-weight: 600;
+                    color: #95a5a6;
+                    text-transform: uppercase;
+                    letter-spacing: 0.5px;
+                    background: #f8f9fa;
+                    border-radius: 8px;
+                }
+
+                .table-row {
+                    border-bottom: 1px solid #f5f5f5;
+                }
+
+                .content-title {
+                    font-size: 13px;
+                    font-weight: 600;
+                    color: #2c3e50;
+                }
+
+                .content-type {
+                    display: flex;
+                    align-items: center;
+                    gap: 4px;
+                    font-size: 12px;
+                    font-weight: 500;
+                }
+
+                .content-type.pdf { color: #e74c3c; }
+                .content-type.video { color: #9b59b6; }
+
+                .content-class {
+                    font-size: 12px;
+                    color: #7f8c8d;
+                }
+
+                .content-views, .content-purchases {
+                    display: flex;
+                    align-items: center;
+                    gap: 4px;
+                    font-size: 13px;
+                    color: #2c3e50;
+                }
+
+                .content-views svg { color: #3498db; }
+                .content-purchases svg { color: #27ae60; }
+
+                @media (max-width: 1024px) {
+                    .dashboard-grid {
+                        grid-template-columns: 1fr;
+                    }
+                }
+
+                @media (max-width: 768px) {
+                    .table-header, .table-row {
+                        grid-template-columns: 2fr 1fr 1fr;
+                    }
+
+                    .table-header span:nth-child(3),
+                    .table-row span:nth-child(3),
+                    .table-header span:nth-child(4),
+                    .table-row span:nth-child(4) {
+                        display: none;
+                    }
+                }
+            `}</style>
         </div>
     );
-};
+}
 
 export default Dashboard;

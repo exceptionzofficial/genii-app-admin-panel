@@ -2,19 +2,26 @@ import {
     LayoutDashboard,
     Users,
     FileText,
-    CreditCard,
+    IndianRupee,
+    ShoppingCart,
     Bell,
+    Settings,
     BookOpen,
     LogOut
 } from 'lucide-react';
 
 const Sidebar = ({ isOpen, currentPage, onNavigate }) => {
-    const navItems = [
+    const mainNavItems = [
         { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-        { id: 'users', label: 'Students', icon: Users },
         { id: 'content', label: 'Content', icon: FileText },
-        { id: 'subscriptions', label: 'Subscriptions', icon: CreditCard },
+        { id: 'pricing', label: 'Pricing', icon: IndianRupee },
+        { id: 'orders', label: 'Orders', icon: ShoppingCart },
+        { id: 'users', label: 'Students', icon: Users },
+    ];
+
+    const systemNavItems = [
         { id: 'notifications', label: 'Notifications', icon: Bell },
+        { id: 'settings', label: 'Settings', icon: Settings },
     ];
 
     return (
@@ -32,7 +39,7 @@ const Sidebar = ({ isOpen, currentPage, onNavigate }) => {
             <nav className="sidebar-nav">
                 <div className="nav-section">
                     <div className="nav-section-title">Main Menu</div>
-                    {navItems.slice(0, 4).map((item) => (
+                    {mainNavItems.map((item) => (
                         <div
                             key={item.id}
                             className={`nav-item ${currentPage === item.id ? 'active' : ''}`}
@@ -46,7 +53,7 @@ const Sidebar = ({ isOpen, currentPage, onNavigate }) => {
 
                 <div className="nav-section">
                     <div className="nav-section-title">System</div>
-                    {navItems.slice(4).map((item) => (
+                    {systemNavItems.map((item) => (
                         <div
                             key={item.id}
                             className={`nav-item ${currentPage === item.id ? 'active' : ''}`}
