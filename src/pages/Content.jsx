@@ -246,7 +246,7 @@ function Content() {
             };
 
             const url = editingContent
-                ? `${API_URL}/content/${editingContent._id}`
+                ? `${API_URL}/content/${editingContent.contentId || editingContent._id}`
                 : `${API_URL}/content`;
 
             const method = editingContent ? 'PUT' : 'POST';
@@ -407,7 +407,7 @@ function Content() {
             ) : (
                 <div className="content-grid">
                     {filteredContent.map(item => (
-                        <div key={item._id} className="content-card">
+                        <div key={item.contentId || item._id} className="content-card">
                             <div className="content-header">
                                 <div className={`content-type-badge ${item.type}`}>
                                     {item.type === 'pdf' ? <FileText size={14} /> : <Video size={14} />}
@@ -459,10 +459,10 @@ function Content() {
                                 <button className="btn-action" onClick={() => handleEdit(item)}>
                                     <Edit2 size={14} />
                                 </button>
-                                <button className="btn-action" onClick={() => toggleStatus(item._id)}>
+                                <button className="btn-action" onClick={() => toggleStatus(item.contentId || item._id)}>
                                     {item.status === 'published' ? 'Unpublish' : 'Publish'}
                                 </button>
-                                <button className="btn-action delete" onClick={() => handleDelete(item._id)}>
+                                <button className="btn-action delete" onClick={() => handleDelete(item.contentId || item._id)}>
                                     <Trash2 size={14} />
                                 </button>
                             </div>
