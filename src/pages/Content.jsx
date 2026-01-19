@@ -75,6 +75,7 @@ function Content() {
 
     const [selectedFile, setSelectedFile] = useState(null);
     const [selectedThumbnail, setSelectedThumbnail] = useState(null);
+    const [uploadPercent, setUploadPercent] = useState(0);
 
     // Fetch content from API
     const fetchContent = async () => {
@@ -174,32 +175,117 @@ function Content() {
         setShowAddModal(true);
     };
 
-    // Upload file to Cloudinary
+    // Direct S3 upload using presigned URL (bypasses Vercel 4.5MB limit)
     const uploadFile = async (file, type) => {
-        const formDataUpload = new FormData();
-        formDataUpload.append('file', file);
+        try {
+            // Step 1: Get presigned URL from backend
+            setUploadProgress('Preparing upload...');
+            const folder = type === 'pdf' ? 'pdfs' : 'videos';
 
-        const endpoint = type === 'pdf' ? '/upload/pdf' : '/upload/video';
+            const presignedResponse = await fetch(`${API_URL}/upload/presigned`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    fileName: file.name,
+                    fileType: file.type,
+                    folder: folder
+                })
+            });
 
-        const response = await fetch(`${API_URL}${endpoint}`, {
-            method: 'POST',
-            body: formDataUpload
-        });
+            const presignedData = await presignedResponse.json();
 
-        return await response.json();
+            if (!presignedData.success) {
+                throw new Error(presignedData.message || 'Failed to get upload URL');
+            }
+
+            const { uploadUrl, publicUrl, key } = presignedData.data;
+
+            // Step 2: Upload directly to S3 with progress tracking
+            return new Promise((resolve, reject) => {
+                const xhr = new XMLHttpRequest();
+
+                xhr.upload.addEventListener('progress', (event) => {
+                    if (event.lengthComputable) {
+                        const percent = Math.round((event.loaded / event.total) * 100);
+                        setUploadPercent(percent);
+                        const uploadedMB = (event.loaded / 1024 / 1024).toFixed(1);
+                        const totalMB = (event.total / 1024 / 1024).toFixed(1);
+                        setUploadProgress(`Uploading ${type.toUpperCase()}... ${percent}% (${uploadedMB}/${totalMB} MB)`);
+                    }
+                });
+
+                xhr.addEventListener('load', () => {
+                    if (xhr.status >= 200 && xhr.status < 300) {
+                        resolve({
+                            success: true,
+                            data: {
+                                url: publicUrl,
+                                key: key
+                            }
+                        });
+                    } else {
+                        reject(new Error(`Upload failed with status ${xhr.status}`));
+                    }
+                });
+
+                xhr.addEventListener('error', () => {
+                    reject(new Error('Network error during upload'));
+                });
+
+                xhr.addEventListener('abort', () => {
+                    reject(new Error('Upload was cancelled'));
+                });
+
+                xhr.open('PUT', uploadUrl);
+                xhr.setRequestHeader('Content-Type', file.type);
+                xhr.send(file);
+            });
+        } catch (error) {
+            throw error;
+        }
     };
 
-    // Upload thumbnail
+    // Direct S3 upload for thumbnails using presigned URL
     const uploadThumbnail = async (file) => {
-        const formDataUpload = new FormData();
-        formDataUpload.append('file', file);
+        try {
+            setUploadProgress('Uploading thumbnail...');
 
-        const response = await fetch(`${API_URL}/upload/thumbnail`, {
-            method: 'POST',
-            body: formDataUpload
-        });
+            const presignedResponse = await fetch(`${API_URL}/upload/presigned`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    fileName: file.name,
+                    fileType: file.type,
+                    folder: 'thumbnails'
+                })
+            });
 
-        return await response.json();
+            const presignedData = await presignedResponse.json();
+
+            if (!presignedData.success) {
+                throw new Error(presignedData.message || 'Failed to get upload URL');
+            }
+
+            const { uploadUrl, publicUrl } = presignedData.data;
+
+            // Upload directly to S3
+            const uploadResponse = await fetch(uploadUrl, {
+                method: 'PUT',
+                headers: { 'Content-Type': file.type },
+                body: file
+            });
+
+            if (!uploadResponse.ok) {
+                throw new Error('Thumbnail upload failed');
+            }
+
+            return {
+                success: true,
+                data: { url: publicUrl }
+            };
+        } catch (error) {
+            return { success: false, error: error.message };
+        }
     };
 
     const handleSave = async () => {
@@ -272,6 +358,7 @@ function Content() {
         } finally {
             setUploading(false);
             setUploadProgress('');
+            setUploadPercent(0);
         }
     };
 
@@ -695,9 +782,23 @@ function Content() {
                         </div>
 
                         {uploading && (
-                            <div className="upload-progress">
-                                <Loader2 size={20} className="spin" />
-                                <span>{uploadProgress}</span>
+                            <div className="upload-progress-container">
+                                <div className="upload-progress-header">
+                                    <Loader2 size={16} className="spin" />
+                                    <span>{uploadProgress}</span>
+                                </div>
+                                <div className="progress-bar-track">
+                                    <div
+                                        className="progress-bar-fill"
+                                        style={{ width: `${uploadPercent}%` }}
+                                    />
+                                </div>
+                                <div className="progress-stats">
+                                    <span>{uploadPercent}% complete</span>
+                                    {selectedFile && (
+                                        <span>{(selectedFile.size / 1024 / 1024).toFixed(1)} MB</span>
+                                    )}
+                                </div>
                             </div>
                         )}
 
@@ -779,6 +880,60 @@ function Content() {
 
                 .spin {
                     animation: spin 1s linear infinite;
+                }
+
+                /* Upload Progress Bar */
+                .upload-progress-container {
+                    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+                    border-radius: 12px;
+                    padding: 20px;
+                    margin: 16px 0;
+                    border: 1px solid #dee2e6;
+                }
+
+                .upload-progress-header {
+                    display: flex;
+                    align-items: center;
+                    gap: 10px;
+                    margin-bottom: 12px;
+                    color: #1abc9c;
+                    font-weight: 600;
+                    font-size: 14px;
+                }
+
+                .progress-bar-track {
+                    height: 12px;
+                    background: #e9ecef;
+                    border-radius: 6px;
+                    overflow: hidden;
+                    box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+                }
+
+                .progress-bar-fill {
+                    height: 100%;
+                    background: linear-gradient(90deg, #1abc9c 0%, #16a085 50%, #1abc9c 100%);
+                    background-size: 200% 100%;
+                    border-radius: 6px;
+                    transition: width 0.3s ease;
+                    animation: progressShine 1.5s ease-in-out infinite;
+                }
+
+                @keyframes progressShine {
+                    0% { background-position: 200% 0; }
+                    100% { background-position: -200% 0; }
+                }
+
+                .progress-stats {
+                    display: flex;
+                    justify-content: space-between;
+                    margin-top: 10px;
+                    font-size: 12px;
+                    color: #6c757d;
+                }
+
+                .progress-stats span:first-child {
+                    font-weight: 600;
+                    color: #1abc9c;
                 }
 
                 @keyframes spin {
