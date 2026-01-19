@@ -18,7 +18,7 @@ import {
     AlertCircle
 } from 'lucide-react';
 
-const API_URL = 'http://localhost:5000/api';
+const API_URL = 'https://genii-backend.vercel.app/api';
 
 const classOptions = [
     { id: 'all', name: 'All Classes' },
