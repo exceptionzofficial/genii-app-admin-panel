@@ -21,7 +21,7 @@ const Sidebar = ({ isOpen, currentPage, onNavigate }) => {
 
     const systemNavItems = [
         { id: 'notifications', label: 'Notifications', icon: Bell },
-        { id: 'settings', label: 'Settings', icon: Settings },
+        // { id: 'settings', label: 'Settings', icon: Settings }, // Commented out as per user request
     ];
 
     return (

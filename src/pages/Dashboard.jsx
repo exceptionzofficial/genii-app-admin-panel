@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import {
     Users,
     FileText,
@@ -12,79 +13,83 @@ import {
     Package,
     Clock,
     CheckCircle,
-    Eye
+    Eye,
+    Loader2,
+    RefreshCw
 } from 'lucide-react';
 
-// Stats data
-const statsData = [
-    {
-        id: 1,
-        label: 'Total Students',
-        value: '1,247',
-        change: '+12%',
-        trend: 'up',
-        icon: Users,
-        color: '#3498db'
-    },
-    {
-        id: 2,
-        label: 'Total Revenue',
-        value: '₹4,52,890',
-        change: '+18%',
-        trend: 'up',
-        icon: IndianRupee,
-        color: '#27ae60'
-    },
-    {
-        id: 3,
-        label: 'PDF Sales',
-        value: '423',
-        change: '+8%',
-        trend: 'up',
-        icon: FileText,
-        color: '#e74c3c'
-    },
-    {
-        id: 4,
-        label: 'Video Sales',
-        value: '312',
-        change: '+15%',
-        trend: 'up',
-        icon: Video,
-        color: '#9b59b6'
-    }
-];
-
-// Class-wise distribution
-const classDistribution = [
-    { name: 'Class 10', students: 342, revenue: 102600, color: '#3498db' },
-    { name: 'Class 11', students: 287, revenue: 114800, color: '#9b59b6' },
-    { name: 'Class 12', students: 398, revenue: 179100, color: '#e67e22' },
-    { name: 'NEET', students: 220, revenue: 121000, color: '#1abc9c' },
-];
-
-// Recent orders
-const recentOrders = [
-    { id: 'ORD001', user: 'Rahul Kumar', class: 'Class 12', package: 'Complete Bundle', amount: 4500, status: 'completed', date: '2 hours ago' },
-    { id: 'ORD002', user: 'Priya Sharma', class: 'Class 11', package: 'All PDFs', amount: 1800, status: 'completed', date: '3 hours ago' },
-    { id: 'HC001', user: 'Amit Singh', class: 'NEET', package: 'Hard Copy', amount: 4100, status: 'processing', date: '5 hours ago' },
-    { id: 'ORD003', user: 'Sneha Patel', class: 'Class 10', package: 'All Videos', amount: 2000, status: 'completed', date: '6 hours ago' },
-    { id: 'HC002', user: 'Vikram Reddy', class: 'Class 12', package: 'Hard Copy', amount: 3600, status: 'shipped', date: '1 day ago' },
-];
-
-// Popular content
-const popularContent = [
-    { id: 1, title: 'Mathematics - Complete Guide', type: 'PDF', class: 'Class 10', views: 2345, purchases: 234 },
-    { id: 2, title: 'NEET Physics Complete', type: 'Video', class: 'NEET', views: 1876, purchases: 189 },
-    { id: 3, title: 'Chemistry - Organic Reactions', type: 'PDF', class: 'Class 12', views: 1654, purchases: 167 },
-    { id: 4, title: 'Biology - Cell Structure', type: 'Video', class: 'Class 11', views: 1432, purchases: 145 },
-];
+const API_URL = 'https://genii-backend.vercel.app/api';
 
 function Dashboard() {
+    const [stats, setStats] = useState({
+        totalStudents: 0,
+        totalRevenue: 0,
+        digitalOrders: 0,
+        hardcopyOrders: 0,
+        pendingOrders: 0,
+        completedOrders: 0
+    });
+    const [recentOrders, setRecentOrders] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState('');
+
+    // Fetch dashboard data
+    useEffect(() => {
+        fetchDashboardData();
+    }, []);
+
+    const fetchDashboardData = async () => {
+        try {
+            setLoading(true);
+            setError('');
+
+            // Fetch all data in parallel
+            const [usersRes, ordersStatsRes, ordersRes] = await Promise.all([
+                fetch(`${API_URL}/users`),
+                fetch(`${API_URL}/orders/stats`),
+                fetch(`${API_URL}/orders/admin?limit=5`)
+            ]);
+
+            const usersData = await usersRes.json();
+            const ordersStatsData = await ordersStatsRes.json();
+            const ordersData = await ordersRes.json();
+
+            if (usersData.success) {
+                setStats(prev => ({
+                    ...prev,
+                    totalStudents: usersData.count || usersData.data?.length || 0
+                }));
+            }
+
+            if (ordersStatsData.success) {
+                setStats(prev => ({
+                    ...prev,
+                    totalRevenue: ordersStatsData.data?.totalRevenue || 0,
+                    digitalOrders: ordersStatsData.data?.digitalOrders || 0,
+                    hardcopyOrders: ordersStatsData.data?.hardcopyOrders || 0,
+                    pendingOrders: ordersStatsData.data?.pendingOrders || 0,
+                    completedOrders: ordersStatsData.data?.completedOrders || 0
+                }));
+            }
+
+            if (ordersData.success) {
+                setRecentOrders(ordersData.data?.slice(0, 5) || []);
+            }
+
+        } catch (err) {
+            console.error('Dashboard fetch error:', err);
+            setError('Failed to load dashboard data');
+        } finally {
+            setLoading(false);
+        }
+    };
+
     const getStatusIcon = (status) => {
         switch (status) {
-            case 'completed': return <CheckCircle size={14} />;
-            case 'processing': return <Clock size={14} />;
+            case 'completed':
+            case 'delivered': return <CheckCircle size={14} />;
+            case 'processing':
+            case 'pending': return <Clock size={14} />;
             case 'shipped': return <Truck size={14} />;
             default: return <Package size={14} />;
         }
@@ -92,24 +97,109 @@ function Dashboard() {
 
     const getStatusClass = (status) => {
         switch (status) {
-            case 'completed': return 'status-success';
-            case 'processing': return 'status-warning';
+            case 'completed':
+            case 'delivered': return 'status-success';
+            case 'processing':
+            case 'pending': return 'status-warning';
             case 'shipped': return 'status-info';
             default: return '';
         }
     };
 
-    const getPackageIcon = (pkg) => {
-        if (pkg === 'Complete Bundle') return <Crown size={14} className="icon-bundle" />;
-        if (pkg === 'All Videos') return <Video size={14} className="icon-video" />;
-        if (pkg === 'Hard Copy') return <Truck size={14} className="icon-hardcopy" />;
+    const getPackageIcon = (orderType) => {
+        if (orderType === 'hardcopy') return <Truck size={14} className="icon-hardcopy" />;
         return <FileText size={14} className="icon-pdf" />;
     };
 
-    const totalRevenue = classDistribution.reduce((sum, c) => sum + c.revenue, 0);
+    const statsData = [
+        {
+            id: 1,
+            label: 'Total Students',
+            value: stats.totalStudents.toLocaleString(),
+            change: '+12%',
+            trend: 'up',
+            icon: Users,
+            color: '#3498db'
+        },
+        {
+            id: 2,
+            label: 'Total Revenue',
+            value: `₹${stats.totalRevenue.toLocaleString()}`,
+            change: '+18%',
+            trend: 'up',
+            icon: IndianRupee,
+            color: '#27ae60'
+        },
+        {
+            id: 3,
+            label: 'Digital Orders',
+            value: stats.digitalOrders.toString(),
+            change: '+8%',
+            trend: 'up',
+            icon: FileText,
+            color: '#e74c3c'
+        },
+        {
+            id: 4,
+            label: 'Hardcopy Orders',
+            value: stats.hardcopyOrders.toString(),
+            change: '+15%',
+            trend: 'up',
+            icon: Truck,
+            color: '#9b59b6'
+        }
+    ];
+
+    if (loading) {
+        return (
+            <div className="page-container dashboard-page">
+                <div className="loading-state">
+                    <Loader2 size={40} className="spin" />
+                    <p>Loading dashboard...</p>
+                </div>
+                <style>{`
+                    .loading-state {
+                        display: flex;
+                        flex-direction: column;
+                        align-items: center;
+                        justify-content: center;
+                        min-height: 400px;
+                        gap: 16px;
+                        color: #7f8c8d;
+                    }
+                    .loading-state .spin {
+                        animation: spin 1s linear infinite;
+                    }
+                    @keyframes spin {
+                        from { transform: rotate(0deg); }
+                        to { transform: rotate(360deg); }
+                    }
+                `}</style>
+            </div>
+        );
+    }
 
     return (
         <div className="page-container dashboard-page">
+            {/* Header with refresh */}
+            <div className="dashboard-header">
+                <div>
+                    <h1 className="page-title">Dashboard</h1>
+                    <p className="page-subtitle">Overview of your business</p>
+                </div>
+                <button className="refresh-btn" onClick={fetchDashboardData}>
+                    <RefreshCw size={18} />
+                    Refresh
+                </button>
+            </div>
+
+            {error && (
+                <div className="error-banner">
+                    {error}
+                    <button onClick={fetchDashboardData}>Retry</button>
+                </div>
+            )}
+
             {/* Stats Grid */}
             <div className="stats-grid">
                 {statsData.map(stat => (
@@ -130,34 +220,31 @@ function Dashboard() {
             </div>
 
             <div className="dashboard-grid">
-                {/* Class Distribution */}
+                {/* Order Summary */}
                 <div className="dashboard-card">
                     <div className="card-header">
-                        <h3>Class Distribution</h3>
-                        <span className="card-subtitle">Students & Revenue by Class</span>
+                        <h3>Order Summary</h3>
+                        <span className="card-subtitle">Pending & Completed</span>
                     </div>
-                    <div className="class-distribution">
-                        {classDistribution.map(cls => (
-                            <div key={cls.name} className="class-row">
-                                <div className="class-info">
-                                    <div className="class-color" style={{ backgroundColor: cls.color }}></div>
-                                    <span className="class-name">{cls.name}</span>
-                                </div>
-                                <div className="class-stats">
-                                    <span className="class-students">{cls.students} students</span>
-                                    <span className="class-revenue">₹{cls.revenue.toLocaleString()}</span>
-                                </div>
-                                <div className="class-bar-container">
-                                    <div
-                                        className="class-bar"
-                                        style={{
-                                            width: `${(cls.revenue / totalRevenue) * 100}%`,
-                                            backgroundColor: cls.color
-                                        }}
-                                    ></div>
-                                </div>
+                    <div className="order-summary">
+                        <div className="summary-item">
+                            <div className="summary-icon pending">
+                                <Clock size={20} />
                             </div>
-                        ))}
+                            <div className="summary-info">
+                                <span className="summary-number">{stats.pendingOrders}</span>
+                                <span className="summary-label">Pending Orders</span>
+                            </div>
+                        </div>
+                        <div className="summary-item">
+                            <div className="summary-icon completed">
+                                <CheckCircle size={20} />
+                            </div>
+                            <div className="summary-info">
+                                <span className="summary-number">{stats.completedOrders}</span>
+                                <span className="summary-label">Completed Orders</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -168,64 +255,85 @@ function Dashboard() {
                         <button className="view-all-btn">View All</button>
                     </div>
                     <div className="orders-list">
-                        {recentOrders.map(order => (
-                            <div key={order.id} className="order-row">
-                                <div className="order-info">
-                                    <div className="order-package">
-                                        {getPackageIcon(order.package)}
-                                        <span>{order.package}</span>
+                        {recentOrders.length > 0 ? (
+                            recentOrders.map(order => (
+                                <div key={order.orderId} className="order-row">
+                                    <div className="order-info">
+                                        <div className="order-package">
+                                            {getPackageIcon(order.orderType)}
+                                            <span>{order.packageType || order.orderType || 'Order'}</span>
+                                        </div>
+                                        <span className="order-user">{order.phone} • {order.classId || 'N/A'}</span>
                                     </div>
-                                    <span className="order-user">{order.user} • {order.class}</span>
+                                    <div className="order-details">
+                                        <span className="order-amount">₹{(order.amount || 0).toLocaleString()}</span>
+                                        <span className={`order-status ${getStatusClass(order.orderStatus)}`}>
+                                            {getStatusIcon(order.orderStatus)}
+                                            {order.orderStatus || 'pending'}
+                                        </span>
+                                    </div>
                                 </div>
-                                <div className="order-details">
-                                    <span className="order-amount">₹{order.amount.toLocaleString()}</span>
-                                    <span className={`order-status ${getStatusClass(order.status)}`}>
-                                        {getStatusIcon(order.status)}
-                                        {order.status}
-                                    </span>
-                                </div>
+                            ))
+                        ) : (
+                            <div className="no-orders">
+                                <Package size={32} />
+                                <p>No orders yet</p>
                             </div>
-                        ))}
-                    </div>
-                </div>
-
-                {/* Popular Content */}
-                <div className="dashboard-card full-width">
-                    <div className="card-header">
-                        <h3>Popular Content</h3>
-                        <span className="card-subtitle">Most viewed & purchased materials</span>
-                    </div>
-                    <div className="content-table">
-                        <div className="table-header">
-                            <span>Content</span>
-                            <span>Type</span>
-                            <span>Class</span>
-                            <span>Views</span>
-                            <span>Purchases</span>
-                        </div>
-                        {popularContent.map(content => (
-                            <div key={content.id} className="table-row">
-                                <span className="content-title">{content.title}</span>
-                                <span className={`content-type ${content.type.toLowerCase()}`}>
-                                    {content.type === 'PDF' ? <FileText size={14} /> : <Video size={14} />}
-                                    {content.type}
-                                </span>
-                                <span className="content-class">{content.class}</span>
-                                <span className="content-views">
-                                    <Eye size={14} />
-                                    {content.views.toLocaleString()}
-                                </span>
-                                <span className="content-purchases">
-                                    <ShoppingCart size={14} />
-                                    {content.purchases}
-                                </span>
-                            </div>
-                        ))}
+                        )}
                     </div>
                 </div>
             </div>
 
             <style>{`
+                .dashboard-header {
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    margin-bottom: 24px;
+                }
+
+                .dashboard-header .refresh-btn {
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
+                    padding: 10px 20px;
+                    background: white;
+                    border: 1px solid #ecf0f1;
+                    border-radius: 10px;
+                    font-size: 14px;
+                    font-weight: 600;
+                    color: #2c3e50;
+                    cursor: pointer;
+                    transition: all 0.2s;
+                }
+
+                .dashboard-header .refresh-btn:hover {
+                    background: #1abc9c;
+                    color: white;
+                    border-color: #1abc9c;
+                }
+
+                .error-banner {
+                    display: flex;
+                    align-items: center;
+                    justify-content: space-between;
+                    padding: 12px 20px;
+                    background: rgba(231, 76, 60, 0.1);
+                    border: 1px solid rgba(231, 76, 60, 0.3);
+                    border-radius: 10px;
+                    color: #e74c3c;
+                    margin-bottom: 20px;
+                }
+
+                .error-banner button {
+                    padding: 6px 12px;
+                    background: #e74c3c;
+                    color: white;
+                    border: none;
+                    border-radius: 6px;
+                    cursor: pointer;
+                }
+
                 .dashboard-page .stats-grid {
                     display: grid;
                     grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
@@ -277,13 +385,8 @@ function Dashboard() {
                     font-weight: 600;
                 }
 
-                .stat-change.up {
-                    color: #27ae60;
-                }
-
-                .stat-change.down {
-                    color: #e74c3c;
-                }
+                .stat-change.up { color: #27ae60; }
+                .stat-change.down { color: #e74c3c; }
 
                 .dashboard-grid {
                     display: grid;
@@ -296,10 +399,6 @@ function Dashboard() {
                     padding: 24px;
                     border-radius: 16px;
                     box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-                }
-
-                .dashboard-card.full-width {
-                    grid-column: 1 / -1;
                 }
 
                 .card-header {
@@ -338,63 +437,55 @@ function Dashboard() {
                     color: white;
                 }
 
-                /* Class Distribution */
-                .class-distribution {
+                /* Order Summary */
+                .order-summary {
                     display: flex;
-                    flex-direction: column;
-                    gap: 16px;
+                    gap: 20px;
                 }
 
-                .class-row {
-                    display: flex;
-                    flex-direction: column;
-                    gap: 8px;
-                }
-
-                .class-info {
+                .summary-item {
+                    flex: 1;
                     display: flex;
                     align-items: center;
-                    gap: 10px;
+                    gap: 16px;
+                    padding: 20px;
+                    background: #f8f9fa;
+                    border-radius: 12px;
                 }
 
-                .class-color {
-                    width: 12px;
-                    height: 12px;
-                    border-radius: 4px;
-                }
-
-                .class-name {
-                    font-size: 14px;
-                    font-weight: 600;
-                    color: #2c3e50;
-                }
-
-                .class-stats {
+                .summary-icon {
                     display: flex;
-                    justify-content: space-between;
-                    font-size: 12px;
+                    align-items: center;
+                    justify-content: center;
+                    width: 48px;
+                    height: 48px;
+                    border-radius: 12px;
                 }
 
-                .class-students {
-                    color: #7f8c8d;
+                .summary-icon.pending {
+                    background: rgba(241, 196, 15, 0.1);
+                    color: #f39c12;
                 }
 
-                .class-revenue {
-                    font-weight: 600;
+                .summary-icon.completed {
+                    background: rgba(39, 174, 96, 0.1);
                     color: #27ae60;
                 }
 
-                .class-bar-container {
-                    height: 6px;
-                    background: #ecf0f1;
-                    border-radius: 3px;
-                    overflow: hidden;
+                .summary-info {
+                    display: flex;
+                    flex-direction: column;
                 }
 
-                .class-bar {
-                    height: 100%;
-                    border-radius: 3px;
-                    transition: width 0.3s ease;
+                .summary-number {
+                    font-size: 28px;
+                    font-weight: 700;
+                    color: #2c3e50;
+                }
+
+                .summary-label {
+                    font-size: 13px;
+                    color: #7f8c8d;
                 }
 
                 /* Orders List */
@@ -428,10 +519,8 @@ function Dashboard() {
                     color: #2c3e50;
                 }
 
-                .icon-bundle { color: #f39c12; }
-                .icon-video { color: #9b59b6; }
-                .icon-pdf { color: #e74c3c; }
                 .icon-hardcopy { color: #3498db; }
+                .icon-pdf { color: #e74c3c; }
 
                 .order-user {
                     font-size: 12px;
@@ -477,83 +566,19 @@ function Dashboard() {
                     color: #3498db;
                 }
 
-                /* Content Table */
-                .content-table {
+                .no-orders {
                     display: flex;
                     flex-direction: column;
-                }
-
-                .table-header, .table-row {
-                    display: grid;
-                    grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
-                    padding: 12px 16px;
+                    align-items: center;
+                    justify-content: center;
+                    padding: 40px;
+                    color: #bdc3c7;
                     gap: 12px;
-                    align-items: center;
                 }
-
-                .table-header {
-                    font-size: 11px;
-                    font-weight: 600;
-                    color: #95a5a6;
-                    text-transform: uppercase;
-                    letter-spacing: 0.5px;
-                    background: #f8f9fa;
-                    border-radius: 8px;
-                }
-
-                .table-row {
-                    border-bottom: 1px solid #f5f5f5;
-                }
-
-                .content-title {
-                    font-size: 13px;
-                    font-weight: 600;
-                    color: #2c3e50;
-                }
-
-                .content-type {
-                    display: flex;
-                    align-items: center;
-                    gap: 4px;
-                    font-size: 12px;
-                    font-weight: 500;
-                }
-
-                .content-type.pdf { color: #e74c3c; }
-                .content-type.video { color: #9b59b6; }
-
-                .content-class {
-                    font-size: 12px;
-                    color: #7f8c8d;
-                }
-
-                .content-views, .content-purchases {
-                    display: flex;
-                    align-items: center;
-                    gap: 4px;
-                    font-size: 13px;
-                    color: #2c3e50;
-                }
-
-                .content-views svg { color: #3498db; }
-                .content-purchases svg { color: #27ae60; }
 
                 @media (max-width: 1024px) {
                     .dashboard-grid {
                         grid-template-columns: 1fr;
-                    }
-                }
-
-                @media (max-width: 768px) {
-                    .table-header, .table-row {
-                        grid-template-columns: 2fr 1fr 1fr;
-                    }
-
-                    .table-header span:nth-child(3),
-                    .table-row span:nth-child(3),
-                    .table-header span:nth-child(4),
-                    .table-row span:nth-child(4) {
-                        display: none;
                     }
                 }
             `}</style>

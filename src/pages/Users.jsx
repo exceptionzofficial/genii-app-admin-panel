@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
     Search,
     Filter,
@@ -14,18 +14,12 @@ import {
     FileText,
     Video,
     Crown,
-    Truck
+    Truck,
+    Loader2,
+    RefreshCw
 } from 'lucide-react';
 
-// Mock users data
-const mockUsers = [
-    { id: 1, name: 'Rahul Kumar', email: 'rahul@example.com', phone: '+91 9876543210', class: 'class12', board: 'state', school: 'Government Higher Secondary School, Chennai', pincode: '600001', registeredAt: '2026-01-05', purchases: ['bundle', 'hardcopy'] },
-    { id: 2, name: 'Priya Sharma', email: 'priya@example.com', phone: '+91 9876543211', class: 'class11', board: 'cbse', school: 'Kendriya Vidyalaya, Coimbatore', pincode: '641001', registeredAt: '2026-01-06', purchases: ['pdfs'] },
-    { id: 3, name: 'Amit Singh', email: 'amit@example.com', phone: '+91 9876543212', class: 'neet', board: null, school: 'NEET Coaching Academy', pincode: '625001', registeredAt: '2026-01-07', purchases: ['videos'] },
-    { id: 4, name: 'Sneha Patel', email: 'sneha@example.com', phone: '+91 9876543213', class: 'class10', board: 'state', school: 'St. Mary\'s School, Salem', pincode: '636001', registeredAt: '2026-01-08', purchases: ['bundle'] },
-    { id: 5, name: 'Vikram Reddy', email: 'vikram@example.com', phone: '+91 9876543214', class: 'class12', board: 'cbse', school: 'Delhi Public School, Madurai', pincode: '625002', registeredAt: '2026-01-09', purchases: [] },
-    { id: 6, name: 'Anita Gupta', email: 'anita@example.com', phone: '+91 9876543215', class: 'class11', board: 'state', school: 'Government Girls School, Chennai', pincode: '600002', registeredAt: '2026-01-10', purchases: ['hardcopy'] },
-];
+const API_URL = 'https://genii-backend.vercel.app/api';
 
 const classOptions = [
     { id: 'all', name: 'All Classes' },
@@ -42,19 +36,50 @@ const boardOptions = [
 ];
 
 function Users() {
-    const [users] = useState(mockUsers);
+    const [users, setUsers] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState('');
     const [searchTerm, setSearchTerm] = useState('');
     const [classFilter, setClassFilter] = useState('all');
     const [boardFilter, setBoardFilter] = useState('all');
     const [selectedUser, setSelectedUser] = useState(null);
 
+    // Fetch users from API
+    const fetchUsers = async () => {
+        try {
+            setLoading(true);
+            setError('');
+
+            const params = new URLSearchParams();
+            if (classFilter !== 'all') params.append('classId', classFilter);
+            if (boardFilter !== 'all') params.append('board', boardFilter);
+
+            const response = await fetch(`${API_URL}/users?${params}`);
+            const data = await response.json();
+
+            if (data.success) {
+                setUsers(data.data);
+            } else {
+                setError(data.message || 'Failed to fetch users');
+            }
+        } catch (err) {
+            console.error('Error fetching users:', err);
+            setError('Failed to connect to server');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchUsers();
+    }, [classFilter, boardFilter]);
+
     const filteredUsers = users.filter(user => {
-        const matchesSearch = user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            user.phone.includes(searchTerm);
-        const matchesClass = classFilter === 'all' || user.class === classFilter;
-        const matchesBoard = boardFilter === 'all' || user.board === boardFilter || (user.class === 'neet' && boardFilter === 'all');
-        return matchesSearch && matchesClass && matchesBoard;
+        const matchesSearch =
+            user.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            user.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            user.phone?.includes(searchTerm);
+        return matchesSearch;
     });
 
     const getClassName = (classId) => {
@@ -126,81 +151,105 @@ function Users() {
                 </div>
             </div>
 
-            {/* Users Table */}
-            <div className="users-table-container">
-                <table className="users-table">
-                    <thead>
-                        <tr>
-                            <th>Student</th>
-                            <th>Class & Board</th>
-                            <th>School</th>
-                            <th>Purchases</th>
-                            <th>Registered</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {filteredUsers.map(user => (
-                            <tr key={user.id}>
-                                <td>
-                                    <div className="user-info">
-                                        <div className="user-avatar">
-                                            <User size={20} />
-                                        </div>
-                                        <div className="user-details">
-                                            <span className="user-name">{user.name}</span>
-                                            <span className="user-contact">
-                                                <Mail size={12} /> {user.email}
-                                            </span>
-                                            <span className="user-contact">
-                                                <Phone size={12} /> {user.phone}
-                                            </span>
-                                        </div>
-                                    </div>
-                                </td>
-                                <td>
-                                    <div className="class-board-info">
-                                        <span className="class-badge">{getClassName(user.class)}</span>
-                                        {user.board && (
-                                            <span className={`board-badge ${user.board}`}>{getBoardName(user.board)}</span>
-                                        )}
-                                    </div>
-                                </td>
-                                <td>
-                                    <div className="school-info">
-                                        <School size={14} />
-                                        <span>{user.school}</span>
-                                        <span className="pincode">
-                                            <MapPin size={10} /> {user.pincode}
-                                        </span>
-                                    </div>
-                                </td>
-                                <td>
-                                    <div className="purchases-list">
-                                        {user.purchases.length > 0 ? (
-                                            user.purchases.map(p => getPurchaseBadge(p))
-                                        ) : (
-                                            <span className="no-purchases">No purchases</span>
-                                        )}
-                                    </div>
-                                </td>
-                                <td>
-                                    <span className="date">
-                                        <Calendar size={12} />
-                                        {new Date(user.registeredAt).toLocaleDateString()}
-                                    </span>
-                                </td>
-                                <td>
-                                    <button className="btn-view" onClick={() => setSelectedUser(user)}>
-                                        <Eye size={14} />
-                                        View
-                                    </button>
-                                </td>
+            {/* Error State */}
+            {error && (
+                <div className="error-state">
+                    <p>{error}</p>
+                    <button onClick={fetchUsers}><RefreshCw size={16} /> Retry</button>
+                </div>
+            )}
+
+            {/* Loading State */}
+            {loading ? (
+                <div className="loading-state">
+                    <Loader2 size={32} className="spin" />
+                    <p>Loading students...</p>
+                </div>
+            ) : (
+                /* Users Table */
+                <div className="users-table-container">
+                    <table className="users-table">
+                        <thead>
+                            <tr>
+                                <th>Student</th>
+                                <th>Class & Board</th>
+                                <th>School</th>
+                                <th>Purchases</th>
+                                <th>Registered</th>
+                                <th>Actions</th>
                             </tr>
-                        ))}
-                    </tbody>
-                </table>
-            </div>
+                        </thead>
+                        <tbody>
+                            {filteredUsers.length === 0 ? (
+                                <tr>
+                                    <td colSpan={6} style={{ textAlign: 'center', padding: '40px', color: '#7f8c8d' }}>
+                                        No students found
+                                    </td>
+                                </tr>
+                            ) : (
+                                filteredUsers.map(user => (
+                                    <tr key={user.phone}>
+                                        <td>
+                                            <div className="user-info">
+                                                <div className="user-avatar">
+                                                    <User size={20} />
+                                                </div>
+                                                <div className="user-details">
+                                                    <span className="user-name">{user.name}</span>
+                                                    <span className="user-contact">
+                                                        <Mail size={12} /> {user.email || 'N/A'}
+                                                    </span>
+                                                    <span className="user-contact">
+                                                        <Phone size={12} /> {user.phone}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div className="class-board-info">
+                                                <span className="class-badge">{getClassName(user.classId)}</span>
+                                                {user.board && (
+                                                    <span className={`board-badge ${user.board}`}>{getBoardName(user.board)}</span>
+                                                )}
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div className="school-info">
+                                                <School size={14} />
+                                                <span>{user.school || 'N/A'}</span>
+                                                <span className="pincode">
+                                                    <MapPin size={10} /> {user.pincode || 'N/A'}
+                                                </span>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div className="purchases-list">
+                                                {user.purchases && user.purchases.length > 0 ? (
+                                                    user.purchases.map((p, idx) => <span key={idx}>{getPurchaseBadge(p)}</span>)
+                                                ) : (
+                                                    <span className="no-purchases">No purchases</span>
+                                                )}
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <span className="date">
+                                                <Calendar size={12} />
+                                                {user.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'N/A'}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <button className="btn-view" onClick={() => setSelectedUser(user)}>
+                                                <Eye size={14} />
+                                                View
+                                            </button>
+                                        </td>
+                                    </tr>
+                                ))
+                            )}
+                        </tbody>
+                    </table>
+                </div>
+            )}
 
             {/* User Detail Modal */}
             {selectedUser && (
@@ -212,7 +261,7 @@ function Users() {
                             </div>
                             <div>
                                 <h3>{selectedUser.name}</h3>
-                                <p>Registered on {new Date(selectedUser.registeredAt).toLocaleDateString()}</p>
+                                <p>Registered on {selectedUser.createdAt ? new Date(selectedUser.createdAt).toLocaleDateString() : 'N/A'}</p>
                             </div>
                         </div>
 
@@ -227,22 +276,22 @@ function Users() {
                             </div>
                             <div className="detail-row">
                                 <GraduationCap size={16} />
-                                <span>{getClassName(selectedUser.class)} {selectedUser.board && `• ${getBoardName(selectedUser.board)}`}</span>
+                                <span>{getClassName(selectedUser.classId)} {selectedUser.board && `• ${getBoardName(selectedUser.board)}`}</span>
                             </div>
                             <div className="detail-row">
                                 <School size={16} />
-                                <span>{selectedUser.school}</span>
+                                <span>{selectedUser.school || 'N/A'}</span>
                             </div>
                             <div className="detail-row">
                                 <MapPin size={16} />
-                                <span>Pincode: {selectedUser.pincode}</span>
+                                <span>Pincode: {selectedUser.pincode || 'N/A'}</span>
                             </div>
 
                             <div className="purchases-section">
                                 <h4>Purchases</h4>
                                 <div className="purchases-grid">
-                                    {selectedUser.purchases.length > 0 ? (
-                                        selectedUser.purchases.map(p => getPurchaseBadge(p))
+                                    {selectedUser.purchases && selectedUser.purchases.length > 0 ? (
+                                        selectedUser.purchases.map((p, idx) => <span key={idx}>{getPurchaseBadge(p)}</span>)
                                     ) : (
                                         <span className="no-purchases">No purchases yet</span>
                                     )}
