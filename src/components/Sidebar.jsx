@@ -7,16 +7,17 @@ import {
     Bell,
     Settings,
     BookOpen,
-    LogOut
+    LogOut,
+    Star
 } from 'lucide-react';
 
 const Sidebar = ({ isOpen, currentPage, onNavigate }) => {
     const mainNavItems = [
         { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
         { id: 'content', label: 'Content', icon: FileText },
-        { id: 'pricing', label: 'Pricing', icon: IndianRupee },
         { id: 'orders', label: 'Orders', icon: ShoppingCart },
         { id: 'users', label: 'Students', icon: Users },
+        { id: 'reviews', label: 'Reviews', icon: Star },
     ];
 
     const systemNavItems = [

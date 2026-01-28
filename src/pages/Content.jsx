@@ -67,6 +67,8 @@ function Content() {
         lessons: '',
         duration: '',
         previewPages: 5,
+        price: 199,
+        isFree: false,
         status: 'draft',
         fileUrl: '',
         thumbnailUrl: '',
@@ -141,6 +143,8 @@ function Content() {
             lessons: '',
             duration: '',
             previewPages: 5,
+            price: 199,
+            isFree: false,
             status: 'draft',
             fileUrl: '',
             thumbnailUrl: '',
@@ -165,6 +169,8 @@ function Content() {
             lessons: item.lessons || '',
             duration: item.duration || '',
             previewPages: item.previewPages || 5,
+            price: item.price || 0,
+            isFree: item.isFree || false,
             status: item.status,
             fileUrl: item.fileUrl || '',
             thumbnailUrl: item.thumbnailUrl || '',
@@ -503,6 +509,11 @@ function Content() {
                                 <span className={`status-badge ${item.status}`}>
                                     {item.status}
                                 </span>
+                                {item.isFree && (
+                                    <span className="status-badge free">
+                                        Free
+                                    </span>
+                                )}
                             </div>
 
                             {item.thumbnailUrl && (
@@ -704,6 +715,30 @@ function Content() {
                                     </div>
                                 </>
                             )}
+
+                            <div className="form-group">
+                                <label>Price (₹)</label>
+                                <input
+                                    type="number"
+                                    value={formData.price}
+                                    onChange={(e) => setFormData({ ...formData, price: parseInt(e.target.value) || 0 })}
+                                    placeholder="e.g. 199"
+                                    min="0"
+                                    disabled={uploading || formData.isFree}
+                                />
+                            </div>
+
+                            <div className="form-group" style={{ flexDirection: 'row', alignItems: 'center', gap: '10px', paddingTop: '20px' }}>
+                                <input
+                                    type="checkbox"
+                                    id="isFree"
+                                    checked={formData.isFree}
+                                    onChange={(e) => setFormData({ ...formData, isFree: e.target.checked })}
+                                    style={{ width: '20px', height: '20px', cursor: 'pointer' }}
+                                    disabled={uploading}
+                                />
+                                <label htmlFor="isFree" style={{ cursor: 'pointer', fontSize: '14px', color: '#2c3e50' }}>Is this free content?</label>
+                            </div>
 
                             <div className="form-group">
                                 <label>Status</label>
@@ -1106,6 +1141,11 @@ function Content() {
                 .status-badge.draft {
                     background: rgba(241, 196, 15, 0.1);
                     color: #f39c12;
+                }
+                
+                .status-badge.free {
+                    background: rgba(46, 204, 113, 0.1);
+                    color: #27ae60;
                 }
 
                 .content-thumbnail {
