@@ -31,7 +31,7 @@ function Orders() {
     const [selectedOrder, setSelectedOrder] = useState(null);
     const [showStatusModal, setShowStatusModal] = useState(false);
     const [newStatus, setNewStatus] = useState('');
-    const [trackingId, setTrackingId] = useState('');
+    const [trackingNumber, setTrackingNumber] = useState('');
     const [updating, setUpdating] = useState(false);
 
     // Fetch orders on component mount and when tab changes
@@ -107,7 +107,7 @@ function Orders() {
     const openStatusModal = (order) => {
         setSelectedOrder(order);
         setNewStatus(order.orderStatus || 'pending');
-        setTrackingId(order.trackingId || '');
+        setTrackingNumber(order.trackingNumber || '');
         setShowStatusModal(true);
     };
 
@@ -116,12 +116,19 @@ function Orders() {
 
         try {
             setUpdating(true);
-            const response = await fetch(`${API_URL}/orders/${selectedOrder.orderId}`, {
+
+            // Use different endpoint for hardcopy orders
+            const endpoint = selectedOrder.orderType === 'hardcopy'
+                ? `${API_URL}/orders/${selectedOrder.orderId}/status`
+                : `${API_URL}/orders/${selectedOrder.orderId}`;
+
+            const response = await fetch(endpoint, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     orderStatus: newStatus,
-                    trackingId: trackingId || null
+                    trackingNumber: trackingNumber || null,
+                    ...(selectedOrder.orderType !== 'hardcopy' && { trackingId: trackingNumber || null })
                 })
             });
 
@@ -131,7 +138,7 @@ function Orders() {
                 // Update local state
                 setOrders(prev => prev.map(order =>
                     order.orderId === selectedOrder.orderId
-                        ? { ...order, orderStatus: newStatus, trackingId: trackingId || order.trackingId }
+                        ? { ...order, orderStatus: newStatus, trackingNumber: trackingNumber || order.trackingNumber, trackingId: trackingNumber || order.trackingId }
                         : order
                 ));
                 setShowStatusModal(false);
@@ -345,7 +352,11 @@ function Orders() {
                                     <td>
                                         <div className="address-cell">
                                             <MapPin size={14} />
-                                            <span>{order.deliveryAddress || 'No address'}</span>
+                                            <span>
+                                                {order.shippingAddress
+                                                    ? `${order.shippingAddress.address || ''}, ${order.shippingAddress.city || ''}, ${order.shippingAddress.state || ''} - ${order.shippingAddress.pincode || ''}`.trim()
+                                                    : (order.deliveryAddress || 'No address')}
+                                            </span>
                                         </div>
                                     </td>
                                     <td className="amount">₹{(order.amount || 0).toLocaleString()}</td>
@@ -354,8 +365,8 @@ function Orders() {
                                             {getStatusIcon(order.orderStatus)}
                                             <span>{order.orderStatus || 'pending'}</span>
                                         </span>
-                                        {order.trackingId && (
-                                            <div className="tracking-id">Track: {order.trackingId}</div>
+                                        {order.trackingNumber && (
+                                            <div className="tracking-id">Track: {order.trackingNumber}</div>
                                         )}
                                     </td>
                                     <td>
@@ -391,12 +402,12 @@ function Orders() {
 
                         {(newStatus === 'shipped' || selectedOrder.orderType === 'hardcopy') && (
                             <div className="form-group">
-                                <label>Tracking ID</label>
+                                <label>Tracking Number</label>
                                 <input
                                     type="text"
-                                    value={trackingId}
-                                    onChange={(e) => setTrackingId(e.target.value)}
-                                    placeholder="Enter tracking ID"
+                                    value={trackingNumber}
+                                    onChange={(e) => setTrackingNumber(e.target.value)}
+                                    placeholder="Enter tracking number"
                                 />
                             </div>
                         )}

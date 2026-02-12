@@ -26,6 +26,7 @@ const classOptions = [
     { id: 'class11', name: 'Class 11' },
     { id: 'class12', name: 'Class 12' },
     { id: 'neet', name: 'NEET' },
+    { id: 'hardcopy', name: 'Hard Copy' },
 ];
 
 const boardOptions = [
