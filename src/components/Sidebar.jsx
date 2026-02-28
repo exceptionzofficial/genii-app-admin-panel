@@ -8,13 +8,15 @@ import {
     Settings,
     BookOpen,
     LogOut,
-    Star
+    Star,
+    HelpCircle
 } from 'lucide-react';
 
 const Sidebar = ({ isOpen, currentPage, onNavigate }) => {
     const mainNavItems = [
         { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
         { id: 'content', label: 'Content', icon: FileText },
+        { id: 'mcqs', label: 'MCQs', icon: HelpCircle },
         { id: 'orders', label: 'Orders', icon: ShoppingCart },
         { id: 'users', label: 'Students', icon: Users },
         { id: 'reviews', label: 'Reviews', icon: Star },

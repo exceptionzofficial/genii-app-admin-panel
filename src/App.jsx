@@ -8,6 +8,7 @@ import Orders from './pages/Orders';
 import Notifications from './pages/Notifications';
 import Settings from './pages/Settings';
 import Reviews from './pages/Reviews';
+import MCQs from './pages/MCQs';
 import './App.css';
 
 function App() {
@@ -25,6 +26,8 @@ function App() {
         return <Users />;
       case 'content':
         return <Content />;
+      case 'mcqs':
+        return <MCQs />;
 
       case 'orders':
         return <Orders />;
